@@ -1,0 +1,148 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\froman\fcharset0 Times-Roman;\f2\fnil\fcharset0 Menlo-Bold;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww14600\viewh11060\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs32 \cf0 \CocoaLigature0 library(RCircos)\
+data(RCircos.Gene.Label.Data)\
+or\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 \
+data(UCSC.HG19.Human.CytoBandIdeogram)\
+cyto.info <- UCSC.HG19.Human.CytoBandIdeogram\
+\
+RCircos.Set.Core.Components(cyto.info, chr.exclude=NULL, tracks.inside=10, tracks.outside=0)\
+\
+or\
+\
+RCircos.Set.Core.Components(cyto.info, chr.exclude=c("chrX", "chrY"), tracks.inside=10, tracks.outside=0)\
+\
+gene.data <- RCircos.Gene.Label.Data\
+or\
+\
+gene.data <- read.csv("sample",  sep = "\\t", header=T)\
+\
+\
+RCircos.Set.Plot.Area()\
+RCircos.Chromosome.Ideogram.Plot()\
+RCircos.Gene.Connector.Plot(gene.data, track.num=1, side="in")\
+\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f1 \cf2 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \outl0\strokewidth0 \strokec2 RCircos.Gene.Connector.Plot(gene.data, side="out", inside.pos=2.5, outside.pos=3)\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\fs36 \cf0 \outl0\strokewidth0 data(RCircos.Heatmap.Data)\
+\pard\pardeftab720\sl280\partightenfactor0
+\cf2 \outl0\strokewidth0 \strokec2 data.col <- 6;\
+track.num <- 5; \
+side <- "in"; \
+ RCircos.Heatmap.Plot(RCircos.Heatmap.Data, data.col, + track.num, side);\
+\
+\
+\
+data(RCircos.Scatter.Data); \
+ data.col <- 5; \
+ track.num <- 6; \
+side <- "in"; \
+ by.fold <- 1; \
+RCircos.Scatter.Plot(RCircos.Scatter.Data, data.col, + track.num, side, by.fold);\
+\
+\
+\
+data(RCircos.Line.Data); \
+data.col <- 5; \
+track.num <- 7; \
+ side <- "in"; \
+ RCircos.Line.Plot(RCircos.Line.Data, data.col, + track.num, side);\
+\
+\
+data(RCircos.Histogram.Data); \
+ data.col <- 4; \
+track.num <- 8; \
+ side <- "in"; \
+ RCircos.Histogram.Plot(RCircos.Histogram.Data, + data.col, track.num, side);\
+\
+\
+data(RCircos.Tile.Data); \
+track.num <- 9; \
+ side <- "in"; \
+RCircos.Tile.Plot(RCircos.Tile.Data, track.num, side);\
+\
+\
+\
+\
+\ul Following code draw link lines and ribbons in the center of plot area. \
+\ulnone \
+data(RCircos.Link.Data); \
+track.num <- 11; \
+RCircos.Link.Plot(RCircos.Link.Data, track.num, TRUE); \
+data(RCircos.Ribbon.Data); \
+RCircos.Ribbon.Plot(ribbon.data=RCircos.Ribbon.Data, + track.num=11, by.chromosome=FALSE, twist=FALSE); > dev.off();\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs32 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 \outl0\strokewidth0 track.num <- 5
+\f1\fs36 \cf2 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \outl0\strokewidth0 \strokec2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs32 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 \outl0\strokewidth0 gene.data <- read.csv("sample",  sep = "\\t", header=T)\
+name.col <- 4\
+side <- "in"\
+RCircos.Set.Plot.Area()\
+RCircos.Chromosome.Ideogram.Plot()\
+RCircos.Gene.Name.Plot(gene.data, name.col, + track.num, side)\
+\
+\
+\
+\
+\
+\
+
+\f2\b \ul final cricos plot steps
+\f0\b0 \ulnone \
+\
+library(RCircos)\
+data(RCircos.Gene.Label.Data)\
+\
+data(UCSC.HG19.Human.CytoBandIdeogram)\
+cyto.info <- UCSC.HG19.Human.CytoBandIdeogram\
+\
+RCircos.Set.Core.Components(cyto.info, chr.exclude=NULL, tracks.inside=10, tracks.outside=0)\
+\
+or\
+\
+RCircos.Set.Core.Components(cyto.info, chr.exclude=c("chrX", "chrY"), tracks.inside=10, tracks.outside=0)\
+\
+gene.data <- read.csv("sample",  sep = "\\t", header=T)\
+name.col <- 4\
+side <- "in"\
+track.num <- 1\
+RCircos.Set.Plot.Area()\
+RCircos.Chromosome.Ideogram.Plot()\
+RCircos.Gene.Connector.Plot(gene.data, track.num, side)\
+track.num <- 2\
+RCircos.Gene.Name.Plot(gene.data,name.col, track.num, side)\
+data.col <- 5\
+track.num <- 3\
+RCircos.Heatmap.Plot(gene.data,data.col, track.num, side)\
+\
+}

@@ -1,0 +1,733 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fnil\fcharset0 Menlo-Bold;\f1\fnil\fcharset0 Menlo-Regular;\f2\fnil\fcharset0 HelveticaNeue;
+\f3\fswiss\fcharset0 ArialMT;\f4\froman\fcharset0 Times-Roman;\f5\fmodern\fcharset0 Courier-Bold;
+\f6\fnil\fcharset0 Consolas;}
+{\colortbl;\red255\green255\blue255;\red58\green62\blue68;\red237\green236\blue236;\red64\green11\blue217;
+\red27\green29\blue31;\red159\green160\blue28;\red180\green36\blue25;\red200\green20\blue201;\red46\green174\blue187;
+\red235\green236\blue237;\red36\green38\blue41;\red104\green26\blue29;\red43\green39\blue19;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww26280\viewh17840\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\b\fs48 \cf0 \CocoaLigature0 ########Download data from GDC##########
+\f1\b0\fs30 \
+\
+../softwares/gdc-client download -m gdc_manifest_20160817_120237.txt
+\f0\b\fs48 \ul \ulc0 \
+\
+\
+steps to get mirna data from tcga\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0\fs32 \cf0 \ulnone /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/values\
+cut -f1 MANIFEST.txt |tail -n+2 >ids\
+\
+perl -ne 'chomp;$g=`grep -w $_ ../metadata/metadata.tsv |cut -f33,37`;print $g;' ids >ids_tcga_ids\
+\
+#pwd /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/clinical\
+\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep -w "stage i" >stage1\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep -w "stage ii" >stage2\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep -w "stage iii" >stage3\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep  "stage iv\'94 >stage4\
+\
+####### to count the lines##########\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 cut -f1 stage1 |sort |uniq -c\
+###########################
+\fs32 \
+\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage1 >stageI\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage2 >stageII\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage3 >stageIII\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage4 >stageIV\
+\
+\
+###pwd /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/values\
+grep  "TCGA-..-....-[1-9][0-9][A-Z]-.." ids_tcga_ids >normal_ids  ##########get normal ids\
+grep  "TCGA-..-....-[0][0-9][A-Z]-.." ids_tcga_ids >cancer_ids    ########## get cancer ids\
+cut -d- -f1-7 cancer_ids >cancer3_ids\
+cut -d- -f1-7 normal_ids >normal3_ids\
+paste <(cut -f2 cancer3_ids) cancer_ids >cancer_f\
+paste <(cut -f2 normal3_ids) normal_ids >normal_f\
+perl ~/softwaresheryy/hashmatch.pl normal_f cancer_f 1  1|cut  -f1,2,3 >coores_cancer_ids\
+perl ~/softwaresheryy/hashmatch.pl normal_f cancer_f 1  1|cut  -f5,6,7 >coores_normal_ids\
+\
+#############to get stage wise information######################\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs28 \cf0 paste <(cut -f2 ids_tcga_ids|cut -d"-" -f1,2,3) ids_tcga_ids >ids_tcga3\
+\pard\pardeftab720\sl307\partightenfactor0
+
+\f2 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 paste <(cut -f2 cancer_ids|cut -d- -f1-3) cancer_ids >ids_cancer3
+\f1\fs32 \cf0 \cb1 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 ########steps to get stage specific files####### we have removed metastatic samples which have ids like tcga-..-?\cf4 ~@\cf0 ?-06 and kept only primary tumors \
+perl ~/softwaresheryy/hashmatch.pl ids_cancer3 /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/clinical/stageI 1 1 |grep -v "TCGA-..-....-[0][6][A-Z]-.."|cut -f1,2,5,6 >stage1_files\
+\
+############ if stage1_files are blank please check space in stageI file , then replace multiple spaces with single tab (by replacing multiple space with single space then with tab)########################\
+\
+perl ~/softwaresheryy/hashmatch.pl ids_cancer3 /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/clinical/stageII 1 1 |grep -v "TCGA-..-....-[0][6][A-Z]-.."|cut -f1,2,5,6 >stage2_files\
+perl ~/softwaresheryy/hashmatch.pl ids_cancer3 /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/clinical/stageIII 1 1 |grep -v "TCGA-..-....-[0][6][A-Z]-.."|cut -f1,2,5,6 >stage3_files\
+perl ~/softwaresheryy/hashmatch.pl ids_cancer3 /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/clinical/stageIV 1 1 |grep -v "TCGA-..-....-[0][6][A-Z]-.."|cut -f1,2,5,6 >stage4_files\
+\
+\
+sh ../../scripts/log_transform.sh <(cut -f3 stage1_files)\
+mv body body1\
+perl -pe 's/^/Early Stage,/' <(paste stage1_files body1|cut -f2-|perl -pe's/\\t/,/g') >body_stage1\
+\
+sh ../../scripts/log_transform.sh <(cut -f3 stage2_files)\
+mv body body2\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\tx21468\tx22241\pardirnatural\partightenfactor0
+\cf0 perl -pe 's/^/Early Stage,/' <(paste stage2_files body2|cut -f2-|perl -pe's/\\t/,/g') >body_stage2\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 sh ../../scripts/log_transform.sh <(cut -f3 stage3_files)\
+mv body body3\
+perl -pe 's/^/Late Stage,/' <(paste stage3_files body3|cut -f2-|perl -pe's/\\t/,/g') >body_stage3\
+sh ../../scripts/log_transform.sh <(cut -f3 stage4_files)\
+ mv body body4\
+perl -pe 's/^/Late Stage,/' <(paste stage4_files body4|cut -f2-|perl -pe's/\\t/,/g') >body_stage4\
+perl -pe 's/^/Tag,Stage,file_id,Pat_id,/g' <(cut -f1 031ff64f-53a4-4cda-ae2a-10421949e8f7/mirnas.quantification.txt |sed 1d|perl -pe 's/\\n/,/g') >header ##### remove comma from the end of header and see that your header should be in one line\
+cat header body_stage1 body_stage2 body_stage3 body_stage4 >final_matrix_early_late\
+\
+#################### To get normal samples###########################\
+sh ../../scripts/log_transform.sh <(cut -f2 coores_normal_ids)\
+mv body body_normal\
+perl -pe 's/^/Normal,/' <(paste coores_normal_ids body_normal|cut -f2-|perl -pe's/\\t/,/g') >body_normal1\
+\
+###################### To get cancer samples corresponding to normal samples ###########################\
+sh ../../scripts/log_transform.sh <(cut -f2 coores_cancer_ids)\
+mv body body_cancer\
+perl -pe 's/^/Cancer,/' <(paste coores_cancer_ids body_cancer|cut -f2-|perl -pe's/\\t/,/g') >body_cancer1    ##### remove tabs in the end in file coores_cancer_ids\
+\
+cp header header_c_n ########### remove stage from header\
+cat header_c_n body_cancer1 body_normal1 >cancer_normal_final_matrix\
+################################### dividing data into 80 20 ratio for training and testing###############################\
+\
+ 
+\fs24 g=`cut -f1
+\fs32  stage1_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+gshuf <(cut -f1 stage1_files) |head -$RES1 >stage1_80 ####### if u do in unix use shuf instead of gshuf\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage1_80) <(cut -f1 stage1_files) >stage1_20\
+\
+g=`cut -f1 stage2_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+gshuf <(cut -f1 stage2_files) |head -$RES1 >stage2_80 ####### if u do in unix use shuf instead of gshuf\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage2_80) <(cut -f1 stage2_files) >stage2_20\
+\
+g=`cut -f1 stage3_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+gshuf <(cut -f1 stage3_files) |head -$RES1 >stage3_80 ####### if u do in unix use shuf instead of gshuf\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage3_80) <(cut -f1 stage3_files) >stage3_20\
+\
+g=`cut -f1 stage4_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+gshuf <(cut -f1 stage4_files) |head -$RES1 >stage4_80 ####### if u do in unix use shuf instead of gshuf\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage4_80) <(cut -f1 stage4_files) >stage4_20\
+cat stage1_80 stage2_80 >early_80\
+cat stage3_80 stage4_80 >late_80\
+cat stage3_20 stage4_20 >late_20\
+cat stage1_20 stage2_20 >early_20\
+\
+paste <(cut -d, -f4 final_matrix_early_late |cut -d"-" -f1-3) final_matrix_early_late >final_matrix_early_late1\
+perl ~/softwaresheryy/hashmatch.pl early_80 final_matrix_early_late1 1 1 >early_80_matrix\
+perl ~/softwaresheryy/hashmatch.pl late_80 final_matrix_early_late1 1 1 >late_80_matrix\
+perl ~/softwaresheryy/hashmatch.pl late_20 final_matrix_early_late1 1 1 >late_20_matrix\
+perl ~/softwaresheryy/hashmatch.pl early_20 final_matrix_early_late1 1 1 >early_20_matrix\
+\
+########### to remove line after hashtag in early 80 or 20 matrix###########\
+cut -d# -f1 late_80_matrix >late_80_final_mat\
+\
+###########################################################\
+#########remove tab from the end of the files###############\
+\
+\pard\pardeftab720\sl338\partightenfactor0
+
+\f3\fs26 \cf5 \expnd0\expndtw0\kerning0
+\CocoaLigature1 : % s/\\t$/,/g
+\f1\fs32 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 #########################\
+\
+\
+cat header1 early_80_matrix late_80_matrix >training.mat\
+cat header1 early_20_matrix late_20_matrix >testing.mat\
+\
+\
+\
+\
+######log_transform script\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf6 while read line\cf0 \
+\cf6 do\cf0 \
+        \cf4 #echo $line | tr -d '\\r'>>body\cf0 \
+        awk \cf6 '\cf7 \{print log($3+1)/log(2)\}\cf6 \'92\cf0  /Users/bicuser1111/projects/thca/tcga_thca_mirna/data/values/\cf8 $line\cf0 /mirnas.quantification.txt | \cf6 sed\cf0  1d |perl \cf8 -pe\cf0  \cf6 "\cf7 s/\cf8 \\n\cf7 /,/g\cf6 "\cf0  |perl \cf8 -pe\cf0  \cf6 "\cf7 s/,\cf8 \\$\cf7 /\cf8 \\n\cf7 /g\cf6 "\cf0   \cf6 >>\cf0 body\
+        \cf4 #awk '\{if($2==0)\{print log($2+1)/log(2)\}else\{print log($2)/log(2)\}\}' ../../$line | sed 1d |perl -pe "s/\\n/,/g" |perl -pe "s/,\\$/\\n/g"  >>body\cf0 \
+\cf6 done\cf0  \cf6 <\cf8 $1\cf0 \
+\
+\
+############### simple transform script for mRNA  ############\
+\cf6 while read line\cf0 \
+\cf6 do
+\fs42 \cf0 \
+gzip \cf6 -d\cf0  /scratch/sherry/lihc_tcga/mRNA/data/\cf8 $line\cf0 /*.gz\
+        awk \cf6 '\cf7 \{print $2\}\cf6 '\cf0  /scratch/sherry/lihc_tcga/mRNA/data/\cf8 $line\cf0 /*FPKM.txt | \cf6 sed\cf0  1d |perl \cf8 -pe\cf0  \cf6 "\cf7 s/\cf8 \\n\cf7 /,/g\cf6 "\cf0  |perl \cf8 -pe\cf0  \cf6 "\cf7 s/,\cf8 \\$\cf7 /\cf8 \\n\cf7 /g\cf6 "\cf0   \cf6 >>\cf0 body\
+\
+
+\fs32 \cf6 while read line\cf0 \
+\cf6 do
+\fs42 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 ####################\
+\
+hashmatch.pl script\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf8 #!/usr/bin/perl -w\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf4 #system "perl ~/progs/time.pl";\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf6 if\cf0 (\cf9 $ARGV[\cf7 0\cf9 ]\cf0  \cf6 eq\cf0  \cf7 ""\cf0 )\{\cf6 print\cf0  \cf7 "\cf8 \\n\cf7 Usage:   perl hashmatch.pl test1 test2 colnum1 colnum2\cf8 \\n\\n\cf7 "\cf0 ;\}\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf9 $i\cf0 =\cf9 $ARGV[\cf7 2\cf9 ]\cf0  - \cf7 1\cf0 ;\cf9 $j\cf0 =\cf9 $ARGV[\cf7 3\cf9 ]\cf0  - \cf7 1\cf0 ; \cf6 chomp\cf0  \cf9 $i\cf0 ;\cf6 chomp\cf0  \cf9 $j\cf0 ;\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf6 open\cf0 (\cf9 FH\cf0 ,\cf7 "\cf9 $ARGV[\cf7 1\cf9 ]\cf7 "\cf0 );\
+\cf6 while\cf0 (\cf9 $line\cf0 =\cf9 <FH>\cf0 )\{\
+        \cf6 chomp\cf0  \cf9 $line\cf0 ;\
+        \cf9 @arr\cf0 =\cf6 split\cf0 (\cf7 "\cf8 \\t\cf7 "\cf0 ,\cf9 $line\cf0 );\
+        \cf6 push\cf0 (\cf9 @\{$hash\{$arr[$j]\}\}\cf0 ,\cf7 "\cf9 $line\cf7 "\cf0 );\
+\}\
+\cf6 open\cf0 (\cf9 FH1\cf0 ,\cf7 "\cf9 $ARGV[\cf7 0\cf9 ]\cf7 "\cf0 );\
+\cf6 while\cf0 (\cf9 $line1\cf0 =\cf9 <FH1>\cf0 )\{\
+        \cf6 chomp\cf0  \cf9 $line1\cf0 ;\cf9 @arr1\cf0 =\cf6 split\cf0 (\cf7 "\cf8 \\t\cf7 "\cf0 ,\cf9 $line1\cf0 );\
+        \cf6 if\cf0 (\cf6 exists\cf0 (\cf9 $hash\{$arr1[$i]\}\cf0 ))\{\
+                \cf6 foreach\cf0  \cf9 $element\cf0 (\cf9 @\{$hash\{$arr1[$i]\}\}\cf0 )\{\
+                        \cf6 print\cf0  \cf7 "\cf9 $element\cf8 \\t\cf7 ##\cf8 \\t\cf9 $line1\cf8 \\n\cf7 "\cf0 ;\
+                \}\
+        \}\
+\}\
+\
+#########
+\f0\b\fs48 Extra commands
+\f1\b0\fs32 #########\
+########multiple spaces with single space###########\
+\pard\pardeftab720\sl338\partightenfactor0
+
+\f3\fs26 \cf5 \expnd0\expndtw0\kerning0
+\CocoaLigature1 : % s/ //g
+\f1\fs32 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+
+\f3\fs26 \cf5 \expnd0\expndtw0\kerning0
+\CocoaLigature1 : % s/\\s\\+/ /g
+\f1\fs32 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 ########to replace space with tab after 2nd column\
+sed "s/\\s/\\t/2" stageIII\
+\
+#########to count the number of lines in a file ########\
+wc -l file_name\
+\
+cut -f1 file_name|wc\
+\
+############ to remove line after hashtag in early 80 or 20 matrix###########\
+cut -d# -f1 late_80_matrix >late_80_final_mat\
+\
+###########################################################\
+#########remove tab from the end of the files###############\
+\
+\pard\pardeftab720\sl338\partightenfactor0
+
+\f3\fs26 \cf5 \expnd0\expndtw0\kerning0
+\CocoaLigature1 : % s/\\t$/,/g
+\f1\fs32 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf0 \
+####################################\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f4\fs36 \cf0 \expnd0\expndtw0\kerning0
+\CocoaLigature1 #########To determine how many files there are in the current directory,#########\
+
+\f5\b ls -1 | wc -l\
+\
+######to take head of file #######\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b0\fs30 \cf0 \kerning1\expnd0\expndtw0 \CocoaLigature0 head file_name\
+\
+#########substituion in a file#######\
+perl -pi -e 's/\\t$/ /g' file_name
+\fs36 \
+\
+\
+############to count the no of files in a directory##########\
+\pard\pardeftab720\sl338\partightenfactor0
+
+\f6\fs26 \cf5 \cb10 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ls | wc -l\
+\
+\
+
+\f1\fs36 \cf0 \cb1 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+#########
+\f3\fs30 \cf5 \expnd0\expndtw0\kerning0
+\CocoaLigature1 Sort the file randomly and pick first 
+\f6\fs26 \cb10 100
+\f3\fs30 \cb1  lines:\
+\pard\pardeftab720\sl300\partightenfactor0
+
+\f6\fs26 \cf11 \cb10 $ sort -R input | head -n \cf12 100\cf11  >output\cf13 \
+\pard\pardeftab720\sl338\partightenfactor0
+
+\f1\fs36 \cf0 \cb1 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 ####################
+\f0\b\fs48 steps for mRNA matrix from GDC data
+\f1\b0\fs32 ###############\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 vi convertcsv_biospecimen.csv \
+head -1 convertcsv_biospecimen.csv |perl -pe 's/,/\\n/g'\
+head -1 convertcsv_biospecimen.csv |perl -pe 's/,/\\n/g'|cat -n\
+\
+##########Stage-wise information and ids###########\
+cut -d, -f6,28 clinical.csv |cut -f1 -d_ |grep -w "stage i"\
+cut -d, -f6,28 clinical.csv |cut -f1 -d_ |grep -w "stage i"|wc\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep -w "stage i" >stage1\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep -w "stage ii" >stage2\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep -w "stage iii" >stage3\
+cut -f28,6 clinical.tsv |cut -d"_" -f1|grep  "stage iv" >stage4\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage1 >stageI\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage2 >stageII\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage3 >stageIII\
+awk -F"\\t" '\{print $2,"\\t",$1\}' stage4 >stageIV\
+\
+\
+########remove space from stageI, stageII, stageIII, stageIV Files###########\
+################ ids information from metadata ##########\
+sed -n 2p convertcsv_metadata.csv |perl -pe 's/,/\\n/g'|cat -n\
+cut -d, -f5,27 convertcsv_metadata.csv >fname_tcgaId\
+head fname_tcgaId \
+cut -d, -f5,27 convertcsv_metadata.csv |perl -pe 's/,/\\t/g'>fname_tcgaId\
+head fname_tcgaId \
+\
+########## normal_ids#########\
+grep  "TCGA-..-....-[1-9][0-9][A-Z]-.." fname_tcgaId >normal_ids \
+wc normal_ids \
+ ########## cancer_ids#########\
+\
+grep  "TCGA-..-....-[0][0-9][A-Z]-.." fname_tcgaId >cancer_ids \
+wc cancer_ids \
+\
+#################################\
+\
+cp gdc_manifest_20160812_093534.txt manifest\
+vi manifest \
+perl -pe 's/\\./\\t/' manifest |head\
+perl -pe 's/\\./\\t/' manifest >manifest_1\
+\
+perl -pe 's/_/\\t/' fname_tcgaId >fname_tcgaId1\
+\
+\
+perl ~/softwarekd/hashmatch.pl manifest_1 fname_tcgaId1 2 1 |head\
+perl ~/softwarekd/hashmatch.pl manifest_1 fname_tcgaId1 2 1 |cut -f1-5|head\
+perl ~/softwarekd/hashmatch.pl manifest_1 fname_tcgaId1 2 1 |cut -f1-5 |perl -pe 's/##//g'|head\
+perl ~/softwarekd/hashmatch.pl manifest_1 fname_tcgaId1 2 1 |cut -f1-5 |perl -pe 's/##//g' >final_id_file\
+\
+\
+sed -n 's/-/\\t/3' cancer_ids \
+sed -e 's/-/\\t/3' cancer_ids \
+sed -n 's/-/\\t/8' cancer_ids \
+\
+\
+\
+###############to get normal ids #########################\
+grep  "TCGA-..-....-[1-9][0-9][A-Z]-.." final_id_file >normal_ids \
+grep  "TCGA-..-....-[0][0-9][A-Z]-.." final_id_file >cancer_ids\
+\
+\
+cut -d- -f1-7 cancer_ids >cancer3_ids\
+cut -d- -f1-7 normal_ids >normal3_ids\
+\
+paste <(cut -f3 normal3_ids) normal_ids >normal_f\
+paste <(cut -f3 cancer3_ids) cancer_ids >cancer_f\
+\
+perl ~/softwarekd/hashmatch.pl normal_f cancer_f 1  1 |cut  -f1,2,4>coores_cancer_ids\
+perl ~/softwarekd/hashmatch.pl normal_f cancer_f 1  1 |cut  -f8,9,11>coores_normal_ids\
+\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 sh simple_transform.sh <(cut -f3 coores_normal_ids)\
+mv body body_normal\
+perl -pe 's/^/Normal,/' <(paste coores_normal_ids body_normal|cut -f2-|perl -pe's/\\t/,/g') >body_normal1\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 sh simple_transform.sh <(cut -f3 coores_cancer_ids)\
+mv body body_cancer\
+perl -pe 's/^/Cancer,/' <(paste coores_cancer_ids body_cancer|cut -f2-|perl -pe's/\\t/,/g') >body_cancer1 
+\fs30 \
+\
+\
+\
+cp header header_c_n  ############ made changes according to information provided in body_cancer1/normal files#########\
+cat header_c_n 
+\fs32 body_cancer1 body_normal1 >final_cancer_normal_matrix\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\
+\
+\
+\
+grep -v "TCGA-..-....-[0][6][A-Z]-.." cancer_ids >cancer_ids_01\
+\
+sed -e 's/-/\\t/7' cancer_ids_01 >cancer_ids1\
+\
+\
+perl ~/softwarekd/hashmatch.pl cancer_ids1 stageIV 3 1 |cut -f9 |grep -v "TCGA-..-....-[0][6][A-Z]-..">stage4_files\
+perl ~/softwarekd/hashmatch.pl cancer_ids1 stageII 3 1 |cut -f9|grep -v "TCGA-..-....-[0][6][A-Z]-.." >stage2_files\
+perl ~/softwarekd/hashmatch.pl cancer_ids1 stageI 3 1 |cut -f9|grep -v "TCGA-..-....-[0][6][A-Z]-..">stage1_files\
+perl ~/softwarekd/hashmatch.pl cancer_ids1 stageIII 3 1 |cut -f9|grep -v "TCGA-..-....-[0][6][A-Z]-..">stage3_files\
+\
+\
+paste stage1_files stageI>1_stage\
+paste stage2_files stageII>2_stage\
+paste stage3_files stageIII>3_stage\
+paste stage4_files stageIV>4_stage\
+\
+\
+\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 sh ../../scripts/log_transform.sh <(cut -f3 stage1_files)\
+mv body body1\
+perl -pe 's/^/Early Stage,/' <(paste stage1_files body1|cut -f2-|perl -pe's/\\t/,/g') >body_stage1\
+\
+sh ../../scripts/log_transform.sh <(cut -f3 stage2_files)\
+mv body body2\
+perl -pe 's/^/Early Stage,/' <(paste stage2_files body2|cut -f2-|perl -pe's/\\t/,/g') >body_stage2\
+sh ../../scripts/log_transform.sh <(cut -f3 stage3_files)\
+mv body body3\
+perl -pe 's/^/Late Stage,/' <(paste stage3_files body3|cut -f2-|perl -pe's/\\t/,/g') >body_stage3\
+sh ../../scripts/log_transform.sh <(cut -f3 stage4_files)\
+ mv body body4\
+perl -pe 's/^/Late Stage,/' <(paste stage4_files body4|cut -f2-|perl -pe's/\\t/,/g') >body_stage4\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 ################## shuffling data, then training and testing data i.e. 80% and 20%###############\
+g=`cut -f1 stage1_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage1_files) |head -$RES1 >stage1_80
+\fs32 \
+
+\fs30 awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage1_80) <(cut -f1 stage1_files) >stage1_20\
+\
+g=`cut -f1 stage2_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage2_files) |head -$RES1 >stage2_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage2_80) <(cut -f1 stage2_files) >stage2_20\
+\
+\
+g=`cut -f1 stage3_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage3_files) |head -$RES1 >stage3_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage3_80) <(cut -f1 stage3_files) >stage3_20\
+\
+\
+g=`cut -f1 stage4_files |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage4_files) |head -$RES1 >stage4_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage4_80) <(cut -f1 stage4_files) >stage4_20\
+\
+###########early late matrix##############\
+\
+cat stage1_80 stage2_80 >early_80\
+cat stage3_80 stage4_80 >late_80\
+cat stage3_20 stage4_20 >late_20\
+cat stage1_20 stage2_20 >early_20\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 paste stageI stage1_files >1st_stage_tag\
+paste stageII stage2_files >2nd_stage_tag\
+cat 1st_stage_tag 2nd_stage_tag>early_stage_tag\
+paste stageIII stage3_files >3rd_stage_tag\
+paste stageIV stage4_files >4th_stage_tag\
+cat 3rd_stage_tag 4th_stage_tag >late_stage_tag
+\fs30 \
+
+\fs32 cat early_stage_tag late_stage_tag >early_late_tag\
+\
+\
+########## to add ids with matrix########################\
+paste early_late_tag early_late_mat>early_late_mat_with_3ids\
+\
+\
+###########final matrix with header#######################\
+cat header2 early_late_mat_with_3ids>final_matrix_early_late_ids_header\
+\
+#############to make early 80 - 20 matrix#############\
+\
+perl ~/softwarekd/hashmatch.pl early_80 final_matrix_early_late_ids_header 1 3 >early_80_matrix\
+\
+perl ~/softwarekd/hashmatch.pl late_80 final_matrix_early_late_ids_header 1 3 > late_80_matrix\
+\
+perl ~/softwarekd/hashmatch.pl late_20 final_matrix_early_late_ids_header 1 3 >  late_20_matrix\
+\
+perl ~/softwarekd/hashmatch.pl early_20 final_matrix_early_late_ids_header 1 3 > early_20_matrix\
+\
+\
+################## training and testing data##############\
+cat header2 early_80_matrix late_80_matrix >training.mat\
+\
+cat header2 early_20_matrix late_20_matrix >testing.mat\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+ perl -pe \'92s/^/tcga_id stage Tag,/g\'92 <(cut -f1 5a628dc9-3882-4df4-9b5f-4dd23ceeab92.FPKM.txt |sed 1d|perl -pe 's/\\n/,/g')>header #########
+\fs32 ##### remove comma from the end of header and see that your header should be in one line
+\fs30  ######### depending upon what information we want#########\
+\
+\
+cat body_stage1 body_stage2 body_stage3 body_stage4 >early_late_mat\
+\
+cat stageI stageII stageIII stageIV >stage\
+\
+wc -l stage early_late_mat\
+\
+#########paste stage early_late_mat >final_early_late_mat_with_ids ???????\
+cat header final_early_late_mat_with_ids> final_early_late_mat_with_ids_header\
+\
+\
+\
+\
+\
+######################### 
+\f0\b\fs48 mRNA - miRNA matrix for common ids
+\f1\b0\fs30  ###################\
+######to get mRNAids###############\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 cut -f1 final_early_late_with_header >mrna_ids
+\fs30 \
+
+\fs32 wc mrna_ids
+\fs30 \
+############# to get miRNA ids#############\
+
+\fs32 cd tcga_thca_mirna/sherry/data/values/\
+\
+cut -f1 final_matrix_early_late1 >mirna_ids\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 mkdir mirna_mrna_16_aug\
+cp mirna_ids final_matrix_early_late1 ../../../../thca/mrna/\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 final_early_late_with_header mirna_mrna_16_aug/\
+\
+############ to get common ids between mRNA and miRNA data############\
+perl ~/softwarekd/hashmatch.pl mrna_ids mirna_ids 1 1 > common_mirna_mrna_ids\
+\
+cut -f1 common_mirna_mrna_ids >common_miRNA_mRNA_ids2\
+\
+cp final_early_late_with_header final_mRNA_matrix\
+cp final_matrix_early_late1 final_miRNA_matrix\
+\
+perl ~/softwarekd/hashmatch.pl common_miRNA_mRNA_ids2 final_mRNA_matrix  1 1 > common_mRNA_matrix\
+perl ~/softwarekd/hashmatch.pl common_miRNA_mRNA_ids2 final_miRNA_matrix  1 1 > common_miRNA_matrix\
+\
+cut -d# -f1 common_miRNA_matrix >final_common_miRNA_matrix\
+\
+cut -d# -f1 common_mRNA_matrix >final_common_mRNA_matrix\
+\
+############ To get data stage wise ,to make training and testing data (80/20)######################\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 cp stageI stageII stageIII stageIV mirna_mrna_16_aug/\
+\
+############stage specific ids for mRNA and miRNA####################\
+\
+perl ~/softwarekd/hashmatch.pl stageI common_miRNA_mRNA_ids2 1 1 >stageI_mRNA\
+perl ~/softwarekd/hashmatch.pl stageII common_miRNA_mRNA_ids2 1 1 >stageII_mRNA\
+perl ~/softwarekd/hashmatch.pl stageIII common_miRNA_mRNA_ids2 1 1 >stageIII_mRNA\
+perl ~/softwarekd/hashmatch.pl stageIV common_miRNA_mRNA_ids2 1 1 >stageIV_mRNA
+\fs30 \
+\
+\
+######### as these ids from same type of cancer so stage information will be same for both mRNA and miRNA data##########\
+\
+###### stage and ids information##########\
+\
+
+\fs32 cut -f1,4 stageI_mRNA > stage1_mRNA\
+cut -f1,4 stageII_mRNA > stage2_mRNA\
+cut -f1,4 stageIII_mRNA > stage3_mRNA\
+cut -f1,4 stageIV_mRNA > stage4_mRNA\
+\
+ ########shuffling of data and 80/20 #########\
+\
+g=`cut -f1 stage1_mRNA |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage1_mRNA) |head -$RES1 >stage1_mRNA_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage1_mRNA_80) <(cut -f1 stage1_mRNA) >stage1_mRNA_20\
+\
+\
+g=`cut -f1 stage2_mRNA |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage2_mRNA) |head -$RES1 >stage2_mRNA_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage2_mRNA_80) <(cut -f1 stage2_mRNA) >stage2_mRNA_20\
+\
+\
+g=`cut -f1 stage3_mRNA |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage3_mRNA) |head -$RES1 >stage3_mRNA_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage3_mRNA_80) <(cut -f1 stage3_mRNA) >stage3_mRNA_20\
+\
+\
+g=`cut -f1 stage4_mRNA |wc -l`\
+RES1=`printf "%.0f" $(echo " $g*0.8" | bc)`\
+shuf <(cut -f1 stage4_mRNA) |head -$RES1 >stage4_mRNA_80\
+awk 'FNR==NR\{a[$0];next\}!($0 in a)' <(cut -f1 stage4_mRNA_80) <(cut -f1 stage4_mRNA) >stage4_mRNA_20\
+\
+\
+cat stage1_mRNA_80 stage2_mRNA_80 >early_80_mRNA\
+cat stage3_mRNA_80 stage4_mRNA_80 >late_80_mRNA\
+cat stage1_mRNA_20 stage2_mRNA_20 >early_20_mRNA\
+cat stage3_mRNA_20 stage4_mRNA_20 >late_20_mRNA\
+\
+wc early_80_mRNA late_80_mRNA  early_20_mRNA late_20_mRNA\
+\
+#######################################\
+############# early and late matrix for mRNA data############\
+\
+perl ~/softwarekd/hashmatch.pl early_80_mRNA final_mRNA_matrix 1 1 >early_80_mRNA_matrix\
+\
+perl ~/softwarekd/hashmatch.pl late_80_mRNA final_mRNA_matrix 1 1 >late_80_mRNA_matrix\
+\
+perl ~/softwarekd/hashmatch.pl late_20_mRNA final_mRNA_matrix 1 1 >late_20_mRNA_matrix\
+\
+perl ~/softwarekd/hashmatch.pl early_20_mRNA final_mRNA_matrix 1 1 >early_20_mRNA_matrix\
+\
+\
+#########testing and training data###############\
+cat early_80_mRNA_matrix late_80_mRNA_matrix >training_mRNA_matrix\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 cat early_20_mRNA_matrix late_20_mRNA_matrix >testing_mRNA_matrix\
+\
+###################################################\
+############# early and late matrix for miRNA data############\
+perl ~/softwarekd/hashmatch.pl early_80_mRNA final_miRNA_matrix 1 1 >early_80_miRNA_matrix    ############ In this early_80_mRNA (ids file) is used becoz these ids are common ids between miRNA and mRNA##########\
+\
+perl ~/softwarekd/hashmatch.pl late_80_mRNA final_miRNA_matrix 1 1 >late_80_miRNA_matrix\
+perl ~/softwarekd/hashmatch.pl late_20_mRNA final_miRNA_matrix 1 1 >late_20_miRNA_matrix\
+perl ~/softwarekd/hashmatch.pl early_20_mRNA final_miRNA_matrix 1 1 >early_20_miRNA_matrix\
+\
+########## training and testing ############\
+cat early_80_miRNA_matrix late_80_miRNA_matrix >training_miRNA_matrix\
+cat early_20_miRNA_matrix late_20_miRNA_matrix >testing_miRNA_matrix\
+\
+\
+########################### to remove #tag line from the end of each line#######\
+cut -d# -f1 training_miRNA_matrix > final_train_miRNA_matrix\
+cut -d# -f1 testing_miRNA_matrix > final_test_miRNA_matrix\
+\
+cut -d# -f1 testing_mRNA_matrix > final_test_mRNA_matrix\
+cut -d# -f1 training_mRNA_matrix > final_train_mRNA_matrix\
+I\
+cat header1 final_train_miRNA_matrix > final_train_matrix_with_header\
+cat header1 final_test_miRNA_matrix > final_test_matrix_with_header\
+\
+\
+cat header2 final_test_mRNA_matrix > final_test_mRNA_matrix_with_header\
+cat header2 final_train_mRNA_matrix > final_train_mRNA_matrix_with_header\
+\
+\
+\
+\
+\
+\
+\
+#######################################################\
+\
+####### to convert header line with comma separated into single column with new line############\
+\
+: % s/,/\\n/g\
+\
+or vice versa\
+\
+: % s/\\n/,/g\
+\
+\
+\
+\
+\
+#####################################################\
+############ Analysis of ensemble_gtf_file ##########\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs34 \cf0 vi ensemble_ids_list_gdc \
+ grep -v # ensemble_ids_list_gdc >a\
+grep -v "#" ensemble_ids_list_gdc >a\
+ head -1 a\
+ head -1 a|perl -pe 's/\\t/\\n/g'\
+ cut -f2 a |sort -u\
+wc ensemble_ids_list_gdc\
+ls -lrt\
+\
+\
+ head ensemble_ids_list_gdc\
+ head gencode.v22.annotation.gtf \
+perl -pe 's/gene_id "//g' ensemble_ids_list_gdc >aa\
+head aa\
+perl -pe 's/"//g' aa >ll\
+ vi ll\
+ perl -pe 's/";//g' aa >ll\
+ perl hashmatch.pl ll h 1 1 >match6\
+wc match6 \
+ wc h\
+vi h\
+ ls -lrt\
+perl hashmatch.pl ll header_correct 1 1 >match6\
+vi match6 \
+cut -f1 match6 >matched59\
+ awk 'FNR==NR \{a[$0]++; next\} !a[$0]' matched59 header_correct \
+grep "ENSG00000216352.1" header_correct \
+ grep "ENSG00000216352.1" ensemble_ids_list_gdc\
+ grep "ENSG00000216352.1" gencode.v22.annotation.gtf \
+\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs32 \cf0 \
+}

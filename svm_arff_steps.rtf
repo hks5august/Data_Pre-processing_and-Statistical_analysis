@@ -1,0 +1,178 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs34 \cf0 \CocoaLigature0 head 266 training_mirna1 >pos_mi\
+head -266 training_mirna1 >pos_mi\
+sed -n 267,400p training_mirna1 >neg_mi\
+\
+\
+\
+######## to make arff_file ##############\
+perl ~/softwarekd/csv2arff_linux_mac.pl train_mirna11 flag train.arff c\
+\
+\
+\
+########## for feature selection from weka#######\
+\
+perl ~/software/scripts/weka_fs_fcbf.pl train.arff sel.arff\
+ \
+\
+###### for best features to select ####\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs30 \cf0 perl ~/software/feature_sel.pl train_cir.arff sel_bf_cir_train.arff\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\fs34 \cf0 \
+\
+######### to know no of features #######\
+ grep "numeric" sel.arff |wc\
+\
+\
+grep "numeric" sel.arff|cut -d" " -f2  >selected_features\
+\
+###########to run random forest ########\
+\
+nohup perl /scratch/kumardeep/tcga_dwnload/scripts/rf_nfold_default.pl ../sel.arff 10 &\
+\
+########to run svm ###########\
+ sort -grk9 OUT_testing |head\
+\
+\
+####### for validation data######\
+perl /scratch/kumardeep/tcga_dwnload/scripts/valid_on_arff_rf.pl ../../sel.arff ../../test_weka.arff 20\
+\
+########## for transposition of matrix ########\
+sh ~/softwarekd/tpose.sh test_mirna11 >tpose_test_mirna\
+\
+########### for matching or taking features from matrix ########\
+\
+ perl ~/softwarekd/hashmatch.pl fw tpose_test_mirna 1 1 |cut -d# -f1 >a\
+\
+sh ~/softwarekd/tpose.sh >test_weka.csv\
+\
+sh ~/softwarekd/tpose.sh a >test_weka.csv\
+\
+\
+\
+#########################\
+###########################\
+\
+vi training_mrna \
+\
+head -1 training_mrna |perl -pe 's/,/\\n/g'|wc -l\
+\
+cut -d, -f1-30000 training_mrna >1mrna_train\
+cut -d, -f30001-60482 training_mrna >2mrna_train\
+\
+sh ~/softwarekd/tpose.sh 1mrna_train >1mrna_train_tpose\
+sh ~/softwarekd/tpose.sh 2mrna_train >2mrna_train_tpose\
+\
+perl -pe 's/,/\\n/g' header_mrna >h_m\
+\
+paste h_m <(cat 1mrna_train_tpose 2mrna_train_tpose) >tpose_mrna\
+\
+\
+perl ~/softwarekd/hashmatch.pl protein_coding tpose_mrna 1 1 |cut -d# -f1 >pro_mrna\
+\
+sh ~/softwarekd/tpose.sh pro_mrna >mrna_protein.csv\
+\
+\
+perl -pe 's/,/"/g' t_mrna >lll\
+\
+perl -pe 's/,/"/g' t_mrna|perl -pe 's/ //g' >lll\
+\
+perl -pe 's/,/"/g' t_mrna|perl -pe 's/ //g' |cut -d, -f2- >lll\
+\
+perl -pe 's/"//g' t_mrna|perl -pe 's/ //g' |cut -d, -f2- >lll\
+\
+\
+awk -F, '\{print NF\}' abc_tpose |sort -u\
+\
+\
+\
+\
+######## protein coding #########\
+sh ~/softwarekd/tpose.sh final_protein_coding_mrna_mat >final_protein_coding_mrna_mat_tpose\
+\
+perl ~/softwarekd/hashmatch.pl protein_coding aa 1 1 >aa_p\
+\
+perl ~/softwarekd/hashmatch.pl protein_coding bb 1 1 |cut -d# -f1>bb_p\
+  \
+sh ~/softwarekd/tpose.sh aa_p >tpose_aa_p\
+sh ~/softwarekd/tpose.sh bb_p >tpose_bb_p\
+\
+\
+paste -d, tpose_aa_p tpose_bb_p >both.csv\
+\
+ wc -l both.csv \
+\
+perl ~/softwarekd/csv2arff_linux_mac.pl train_mirna11 flag train.arff c\
+\
+perl ~/software/scripts/weka_fs_fcbf.pl train.arff sel.arff\
+\
+\
+grep "+1" sel.arff |cut -d, -f1-35 >pos.csv\
+ grep -v "+1" sel.arff |cut -d, -f1-35 >neg.csv\
+\
+\{grep "numeric" sel.arff |wc\
+grep "+1" sel.arff |cut -d, -f1-18 >pos_mirna\
+ grep -v "+1" sel.arff |cut -d, -f1-18 >neg_mirna\}\
+\
+###### svm######\
+mkdir svm\
+cd svm/\
+nohup perl ~/softwarekd/ten_fold/svm_single.pl ../pos.csv ../neg.csv &\
+tail nohup.out \
+ls -lrt\
+ sort -grk9 OUT |head\
+\
+\
+\
+\
+\
+############# complete steps###############\
+#############################\
+\
+\
+cut -d, -f1-30000 training.mat|cut -d# -f1 >tr1\
+cut -d, -f30001-60485 training.mat|cut -d# -f1 >tr2\
+\
+ awk -F, '\{print NF\}' tr2 |sort -u\
+\
+sh ~/softwarekd/tpose.sh tr1 >tr1_tpose\
+  wc tr1_tpose \
+ \
+sh ~/softwarekd/tpose.sh tr2 >tr2_tpose\
+ awk -F, '\{print NF\}' tr2_tpose |sort -u\
+ wc tr2_tpose \
+ \
+perl  ~/softwarekd/hashmatch.pl miRNAs_genes tr1_tpose 1 1 >match1\
+vi match1\
+\
+ perl  ~/softwarekd/hashmatch.pl miRNAs_genes tr2_tpose 1 1 >match2\
+vi match2\
+wc match1 match2\
+\
+awk -F, '\{print NF\}' match1 |sort -u\
+awk -F, '\{print NF\}' match2 |sort -u\
+\
+cat match1 match2 >1\
+\
+cut -d# -f1 1 >2\
+\
+mv 2 mirna_genes_mat\
+\
+sh ~/softwarekd/tpose.sh mirna_genes_mat  >miRNA_genes_final_matrix\
+\
+ wc miRNA_genes_final_matrix\
+awk -F, '\{print NF\}' miRNA_genes_final_matrix |sort -u\
+\
+\
+\
+\
+\
+}

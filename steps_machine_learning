@@ -1,0 +1,203 @@
+﻿thca
+#pwd	/scratch/kumardeep/tcga_dwnload/tissues/thca/rnaseqv2/RNASeqV2/UNC__IlluminaHiSeq_RNASeqV2/Level_3/predictStage
+#/scratch/kumardeep/tcga_dwnload/tissues/blca/rnaseqv2/RNASeqV2/UNC__IlluminaHiSeq_RNASeqV2/Level_3/predictStage
+
+grep "rsem.genes.normalized_results" ../../../../FILE_SAMPLE_MAP.txt |cut -f2 |sort -u |cut -d- -f1-4 |sort -u |sed -e 's/-/\t/3'>pat.id	
+perl /scratch/kumardeep/tcga_dwnload/scripts/hashmatch.pl pat.id /scratch/kumardeep/tcga_dwnload/getAllTCGAdata/thca_s1.txt 1 1 |awk -F"\t" '{print $4"-"$5"\t"$2}' >thca_s1_mapped.txt	
+perl /scratch/kumardeep/tcga_dwnload/scripts/hashmatch.pl pat.id /scratch/kumardeep/tcga_dwnload/getAllTCGAdata/thca_s2.txt 1 1 |awk -F"\t" '{print $4"-"$5"\t"$2}' >thca_s2_mapped.txt	
+perl /scratch/kumardeep/tcga_dwnload/scripts/hashmatch.pl pat.id /scratch/kumardeep/tcga_dwnload/getAllTCGAdata/thca_s3.txt 1 1 |awk -F"\t" '{print $4"-"$5"\t"$2}' >thca_s3_mapped.txt	
+perl /scratch/kumardeep/tcga_dwnload/scripts/hashmatch.pl pat.id /scratch/kumardeep/tcga_dwnload/getAllTCGAdata/thca_s4.txt 1 1 |awk -F"\t" '{print $4"-"$5"\t"$2}' >thca_s4_mapped.txt	
+mkdir main; cd main
+scriptDir="/scratch/kumardeep/tcga_dwnload/scripts"
+s=0.8
+s1=`wc -l ../thca_s1_mapped.txt |awk '{print $1}'`
+RES1=`printf "%.0f" $(echo " $s1*$s" | bc)`
+shuf ../thca_s1_mapped.txt |head -$RES1 |cut -f1 >s1.ids
+
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s1.ids >s1.list	
+
+s2=`wc -l ../thca_s2_mapped.txt |awk '{print $1}'`
+RES2=`printf "%.0f" $(echo " $s2*$s" | bc)`
+shuf ../thca_s2_mapped.txt |head -$RES2 |cut -f1 >s2.ids	
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s2.ids >s2.list
+cat s1.list s2.list >early.list
+$scriptDir/logTransform_rsem.sh  <(cut -f1 early.list)	;mv body body.early		
+	cut -f2 early.list |cut -d"-" -f1-4 >early.pats
+	paste -d, early.pats <(perl -pe 's/^/Early_Stage,/g' body.early) >early.mat
+perl -ne 'chomp;`cut -f1 ../../$_ |perl -pe "s/\n/,/g" |perl -pe "s/,\$/\n/g" >header`;' <(head -1 <(cut -f1 early.list))
+perl -pi -e 's/\?\|//g' header
+perl -pi -e 's/\|[0-9]+//g' header
+perl -pi -e 's/\?/xxx/g' header
+perl -pi -e 's/^.+?,//g' header
+perl -pi -e 's/SLC35E2/SLC35E2a/' header
+
+s3=`wc -l ../thca_s3_mapped.txt |awk '{print $1}'`
+RES3=`printf "%.0f" $(echo " $s3*$s" | bc)`
+shuf ../thca_s3_mapped.txt |head -$RES3 |cut -f1 >s3.ids	
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s3.ids >s3.list	
+s4=`wc -l ../thca_s4_mapped.txt |awk '{print $1}'`
+RES4=`printf "%.0f" $(echo " $s4*$s" | bc)`
+shuf ../thca_s4_mapped.txt |head -$RES4 |cut -f1 >s4.ids	
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s4.ids >s4.list
+cat s3.list s4.list >late.list
+$scriptDir/logTransform_rsem.sh  <(cut -f1 late.list)	;mv body body.late		
+	cut -f2 late.list |cut -d"-" -f1-4 >late.pats
+	paste -d, late.pats <(perl -pe 's/^/Late_Stage,/g' body.late) >late.mat
+cat header body.early body.late >both.csv
+
+p=`wc -l body.early |awk '{print $1}'`
+n=`wc -l body.late |awk '{print $1}'`
+for i in $(seq $p);do echo "+1";done >pos.flag
+for i in $(seq $n);do echo "-1";done >neg.flag
+cat pos.flag neg.flag >both.flag
+
+############# to make .arff file ###############
+perl ~/softwarekd/csv2arff_linux_mac.pl both.csv both.flag both.arff c
+wait
+perl $scriptDir/weka_fs_fcbf.pl both.arff sel.arff
+wait
+grep attri sel.arff | grep -v class |grep -v relation |cut -d " " -f2 >selGenes
+
+
+########## for feature selection from weka#######
+
+perl ~/software/scripts/weka_fs_fcbf.pl train.arff sel.arff
+
+
+mkdir rf nb smo j48
+cd j48/
+perl ~/scripts/j48_nfold_default.pl ../sel.arff 10
+cd ../rf/
+perl ~/scripts/rf_nfold_default.pl ../sel.arff 10
+cd ../nb/
+perl ~/scripts/naivebayes_nfold_default.pl ../sel.arff 10
+cd ../smo/
+perl ~/scripts/smo_nfold_default.pl ../sel.arff 10
+mkdir ../../valid/;
+
+cd ../../valid/Pep
+##SVM PROTOCOL 10 FOLD
+/scratch/kumardeep/tcga_dwnload/tissues/thca/RNASeqV2/UNC__IlluminaHiSeq_RNASeqV2/Level_3/predictStage/main/svm
+grep "+1$" ../sel.arff |awk -F "," '{$NF=""; print $0}'|perl -pe 's/ /,/g' >pos.csv
+grep "\-1$" ../sel.arff |awk -F "," '{$NF=""; print $0}'|perl -pe 's/ /,/g' >neg.csv
+
+
+perl ~/softwarekd/ML/svm/col2svm.pl -i pos.csv -o pos.c2s -s +1
+perl ~/softwarekd/ML/svm/col2svm.pl -i neg.csv -o neg.c2s -s -1
+##
+#
+#valid
+mkdir rf nb smo j48
+awk 'FNR==NR{a[$1]++;next}!($1 in a){print $0}' ../main/s1.ids <(cat ../thca_s1_mapped.txt |cut -f1) >s1.valid.ids
+awk 'FNR==NR{a[$1]++;next}!($1 in a){print $0}' ../main/s2.ids <(cat ../thca_s2_mapped.txt |cut -f1) >s2.valid.ids
+awk 'FNR==NR{a[$1]++;next}!($1 in a){print $0}' ../main/s3.ids <(cat ../thca_s3_mapped.txt |cut -f1) >s3.valid.ids
+awk 'FNR==NR{a[$1]++;next}!($1 in a){print $0}' ../main/s4.ids <(cat ../thca_s4_mapped.txt |cut -f1) >s4.valid.ids
+
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s1.valid.ids  >s1.valid.list
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s2.valid.ids  >s2.valid.list
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s3.valid.ids  >s3.valid.list
+perl -ne 'chomp; $g=`grep $_ ../../../../../FILE_SAMPLE_MAP.txt | grep "rsem.genes.normalized_results"`;print $g;' s4.valid.ids  >s4.valid.list
+
+cat s1.valid.list s2.valid.list >early.valid.list
+cat s3.valid.list s4.valid.list >late.valid.list
+p=`wc -l early.valid.list |awk '{print $1}'`; n=`wc -l  late.valid.list |awk '{print $1}'`; for i in $(seq $p);do echo "+1";done >pos.flag; for i in $(seq $n);do echo "-1";done >neg.flag; cat pos.flag neg.flag >valid.flag
+$scriptDir/logTransform_rsem.sh  <(cut -f1 early.valid.list)	;mv body body.valid.early	
+	cut -f2 early.valid.list |cut -d"-" -f1-4 >early.valid.pats
+	paste -d, early.valid.pats <(perl -pe 's/^/Early_Stage,/g' body.valid.early) >early.valid.mat
+$scriptDir/logTransform_rsem.sh  <(cut -f1 late.valid.list)	;mv body body.valid.late
+	cut -f2 late.valid.list |cut -d"-" -f1-4 >late.valid.pats
+	paste -d, late.valid.pats <(perl -pe 's/^/Late_Stage,/g' body.valid.late) >late.valid.mat
+cat ../main/header body.valid.early body.valid.late >both.csv
+~/softwarekd/tpose.sh both.csv >valid.csv
+perl -pi -e 's/,/\t/' valid.csv
+perl $scriptDir/hashmatch.pl ../main/selGenes valid.csv 1 1 |cut -f1,2 |perl -pe 's/\t/,/g' >selValid.csv
+perl -pi -e 's/\t/,/g' selValid.csv
+~/softwarekd/tpose.sh selValid.csv >selValidCorrect.csv
+perl ~/softwarekd/csv2arff_linux_mac.pl selValidCorrect.csv valid.flag valid.arff c
+wait
+
+
+############### best out#########
+perl ~/softwarekd/OUT_ps.pl OUT 
+
+
+cd rf/
+perl ~/scripts/valid_on_arff_rf.pl ../../train.arff ../../test.arff 50
+more OUT_valid
+cd ../smo/
+perl ~/scripts/valid_on_arff_smo.pl ../../train.arff ../../test.arff 4 0.01
+more OUT_valid
+cd ../nb/
+perl ~/scripts/valid_on_arff_bayes.pl ../../train.arff ../../test.arff 
+more OUT_valid
+cd ../j48/
+perl ~/scripts/valid_on_arff_j48.pl ../../train.arff ../../test.arff 0.2 10 
+more OUT_valid
+#
+
+
+########### to develop threshold based model #############
+
+#########file should be tpose format ########
+keep “actual” which is both flag file in directory, 
+ 2 other files scripts too in directory i.e. accuracy_new.pl and accuracy1_new.pl
+##### Mean /median calculation ##########
+~/R-3.3.1/bin/Rscript ~/softwarekd/mean_median_max_col_wise.R  pos pos_mean pos_med pos_max
+~/R-3.3.1/bin/Rscript ~/softwarekd/mean_median_max_col_wise.R  neg neg_mean neg_med neg_max
+ 
+### calculate mean diff
+## perl troc2.pl both221_t mean_diff 
+
+###########svm ###########
+nohup perl ~/softwarekd/ten_fold/svm_single_copy.pl ../221pos ../neg221 &
+
+
+
+###########  to develop svm model  ######
+svm_learn -z c -t 2 -g 0.005 -c 1 -j 1 svm_in_t1 model_1
+
+##### validation #####
+perl ~/softwarekd/svm_test_copy.pl pos neg ../model_1 
+
+
+############leave one out ##########
+nohup perl ~/softwarekd/leave_one.pl svmin &
+
+
+
+
+awk: filter out values less than threshold in CSV file
+
+
+
+awk '$7 <= 0.05 {print $0}' rawFile.csv > filteredFile.csv
+
+
+
+
+how to calculate stability index
+
+prepare g_out files having all genes of all sets
+
+calculate index 
+~/R-3.3.1/bin/Rscript index.R >weka_cpg_index
+
+calculate mean
+
+~/R-3.3.1/bin/Rscript mean.R weka_cpg_index weka_cpg_mean
+
+
+
+
+
+Save models 
+
+java weka.classifiers.trees.J48 -C 0.25 -M 2 -t /some/where/train.arff -d /other/place/j48.model
+
+java weka.classifiers.bayes.NaiveBayes –t train.arff –d nb_model
+And you can load it with -l and use it on a test set, e.g.:
+
+ java weka.classifiers.trees.J48 -l /other/place/j48.model -T /some/where/test.arff
+
+
+java weka.classifiers.bayes.NaiveBayes -1 nb_model –T test.arff

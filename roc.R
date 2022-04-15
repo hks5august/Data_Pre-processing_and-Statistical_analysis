@@ -1,0 +1,5 @@
+args <- commandArgs(TRUE)
+suppressMessages(library("pROC"))
+a=read.table(args[1],sep="\t",header=F)
+auc=auc(a$V1,a$V2)
+print(auc)
